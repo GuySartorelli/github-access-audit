@@ -72,12 +72,7 @@ class Maintainer extends DataObject
 
     public function getPackagesAccessSummary()
     {
-        $count = $this->PackagesCount();
-        $top3 = $this->Packages()->limit(3)->map('ID', 'Title')->toArray();
-        if ($count <= 3) {
-            return implode(', ', $top3);
-        } else {
-            return implode(', ', $top3) . ' and ' . ($count - 3) . ' more...';
-        }
+        $packages = $this->Packages()->map('ID', 'Title')->toArray();
+        return implode(', ', $packages);
     }
 }
