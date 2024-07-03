@@ -18,6 +18,7 @@ class Package extends DataObject
 
     private static $db = [
         'Title' => 'Varchar(255)',
+        'Repository' => 'Varchar(255)',
         'Notes' => 'Text',
         'Skip' => 'Boolean',
     ];
@@ -40,6 +41,7 @@ class Package extends DataObject
 
     private static $summary_fields = [
         'Title' => 'Title',
+        'Repository' => 'Repository',
         'Organisation.Title' => 'Organisation',
         'Maintainers.Count' => '# Maintainers',
     ];

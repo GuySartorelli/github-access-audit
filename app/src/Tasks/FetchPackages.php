@@ -61,16 +61,15 @@ class FetchPackages extends BuildTask
 
             $package->Title = $packageName;
             $package->OrganisationID = $org->ID;
-            $package->write();
             try {
-                $this->addMaintainers($org, $package);
+                $this->addPackageData($org, $package);
             } catch (Exception $ex) {
                 $package->Notes = $ex->getMessage() . "\n" . $ex->getTraceAsString();
                 echo "REPO FETCHING Failed: {$ex->getMessage()}\n";
                 $this->failed_repos[] = $org->Name . '/' . $packageName;
+            } finally {
                 $package->write();
             }
-
         }
     }
 
@@ -85,11 +84,12 @@ class FetchPackages extends BuildTask
         return;
     }
 
-    private function addMaintainers(Organisation $org, Package $package): void
+    private function addPackageData(Organisation $org, Package $package): void
     {
         $package->Maintainers()->removeAll();
+        $packageData = $this->fetchPackageData($org->Title, $package->Title);
 
-        foreach ($this->fetchMaintainers($org->Title, $package->Title) as $maintainerData) {
+        foreach ($packageData['maintainers'] as $maintainerData) {
             $maintainer = Maintainer::get()->filter('Title', $maintainerData['name'])->first();
             if (!$maintainer) {
                 $maintainer = Maintainer::create();
@@ -100,17 +100,15 @@ class FetchPackages extends BuildTask
             $maintainer->write();
             $package->Maintainers()->add($maintainer);
         }
+
+        $package->Repository = $packageData['repository'];
     }
 
-    private function fetchMaintainers(string $org, string $package): Generator
+    private function fetchPackageData(string $org, string $package): array
     {
         $this->throttle();
         $response = $this->client->request('GET', "https://packagist.org/packages/{$org}/{$package}.json");
-        $data = $response->toArray();
-        foreach ($data['package']['maintainers'] as $maintainer) {
-            yield $maintainer;
-        }
-        return;
+        return $response->toArray()['package'];
     }
 
     private function throttle(): void
